@@ -5,4 +5,6 @@ requires-python = ">=3.11"
 dependencies = [
     "crewai",
     "crewai-tools>=1.15.1",
+    "pydantic",
+    "requests",
 ]

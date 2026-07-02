@@ -1728,12 +1728,16 @@ source = { virtual = "." }
 dependencies = [
     { name = "crewai" },
     { name = "crewai-tools" },
+    { name = "pydantic" },
+    { name = "requests" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "crewai" },
     { name = "crewai-tools", specifier = ">=1.15.1" },
+    { name = "pydantic" },
+    { name = "requests" },
 ]
 
 [[package]]

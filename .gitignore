@@ -1,0 +1,40 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# uv
+# uv.lock 应提交（锁定依赖），故不忽略
+
+# ===== 密钥 / 环境变量 =====
+.env
+.env.local
+.env.*.local
+# env.example 是模板，需提交
+
+# ===== 运行时生成的文件 =====
+# WeLink 助理工作空间与去重记录
+workspace/
+replied_msgs.json
+
+# ===== IDE / 编辑器 =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+
+# ===== 日志 / 临时文件 =====
+*.log
+*.tmp

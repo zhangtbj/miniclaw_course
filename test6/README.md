@@ -1,471 +1,185 @@
-# Test6 — 项目实战：使用 SPEC.md + 开发 Skill 完成 MiniClaw 开发
+# Test6 — 使用开发 Skill 完成 MiniClaw 开发
 
 ## 学习目标
 
-通过 test6 掌握如何使用规范文档（SPEC.md）和业界开发 Skill（OpenSpec / SuperPowers）高效完成 AI Agent 项目开发。
-
----
-
-## 核心概念
-
-### 1. SPEC.md 的作用
-
-SPEC.md 是项目的**技术蓝图**，定义了：
-- 架构设计（模块划分、数据流）
-- 核心接口（数据模型、函数签名）
-- 实现细节（代码示例、配置说明）
-- 学习路线（从简单到复杂）
-
-**为什么需要 SPEC.md？**
-- 让 AI 理解项目全貌，生成更准确的代码
-- 让开发者快速上手，知道从哪里开始
-- 让团队协作有统一的参考标准
-
-### 2. 开发 Skill 的作用
-
-开发 Skill 是**预配置的 AI 辅助工具**，帮助快速完成特定开发任务：
-
-| Skill | 用途 | 适用场景 |
-|-------|------|---------|
-| **OpenSpec** | 从需求文档生成代码框架 | 项目初始化、模块搭建 |
-| **SuperPowers** | 增强代码生成能力 | 复杂逻辑实现、优化重构 |
-| **CodeReviewer** | 自动代码审查 | 提交前检查、质量保障 |
-| **understand-anything** | 理解代码库 | 接手新项目、分析依赖 |
+掌握如何使用 OpenSpec、Superpowers、Code Review 三个开发 Skill 串联完成 AI Agent 项目开发。
 
 ---
 
 ## 开发工作流
 
-### 完整流程
-
 ```
-1. 阅读 SPEC.md
-   └─ 理解架构设计、模块划分、核心接口
-
-2. 使用 OpenSpec 生成代码框架
-   └─ 输入：SPEC.md 中的模块定义
-   └─ 输出：目录结构、基础代码、接口定义
-
-3. 使用 SuperPowers 实现核心逻辑
-   └─ 输入：SPEC.md 中的实现细节
-   └─ 输出：完整的业务逻辑代码
-
-4. 使用 CodeReviewer 审查代码
-   └─ 输入：生成的代码
-   └─ 输出：优化建议、潜在问题
-
-5. 使用 understand-anything 验证架构
-   └─ 输入：完整项目
-   └─ 输出：架构图、依赖关系、知识图谱
+1. OpenSpec        →  从需求描述生成技术规格（SPEC）
+2. Superpowers     →  brainstorming + 代码实现
+3. Code Review     →  审查代码质量与潜在问题
 ```
 
 ---
 
-## 实战步骤
+## Step 1: 使用 OpenSpec 生成需求规格
 
-### Step 1: 阅读 SPEC.md
+### 目的
 
-打开 `SPEC.md`，重点关注：
+将模糊的产品需求转化为结构化的技术规格文档，包含架构设计、模块划分、核心接口定义。
 
-```markdown
-## 架构设计
-- 飞书集成层（listener.py / sender.py）
-- Runner 执行引擎（runner.py）
-- Main Agent（agents/main_agent.py）
-- 多模态支持（tools/add_image_tool.py）
-- Session 管理（session/manager.py）
+### 操作
 
-## 核心模块
-每个模块都有代码示例，可以直接复制使用
+在 Claude Code 中使用 `/openspec` skill（或通过 `.opencode/skills/openspec/` 安装），输入项目需求：
+
+```
+请根据以下需求生成技术规格：
+
+项目名称：MiniClaw WeLink CLI AI 助理
+核心需求：
+- 监听 WeLink 群消息（文本和图片）
+- 使用 CrewAI Agent 处理消息并生成回复
+- 支持多模态（图片理解）
+- 支持技能扩展（会议纪要、图片分析）
+- 通过 welink-cli 收发消息
 ```
 
-**学习目标**：理解消息从飞书接收到 Agent 处理再到回复的完整流程。
+### OpenSpec 输出
+
+OpenSpec 会生成结构化的技术规格，包含：
+
+- **架构设计**：数据流图、模块划分
+- **核心接口**：InboundMessage 模型、Config 配置类、函数签名
+- **模块职责**：每个区块的输入/输出/职责定义
+- **配置说明**：环境变量、依赖清单
+
+> 生成的规格内容可参考本目录下的 `SPEC.md`，作为后续开发的蓝图。
 
 ---
 
-### Step 2: 使用 OpenSpec 生成代码框架
+## Step 2: 使用 Superpowers 进行 Brainstorming 和开发
 
-#### 方式 A：在 Claude Code 中使用
+### 2.1 Brainstorming — 设计讨论
 
-```bash
-# 启动 Claude Code
-claude
+在编码前，使用 Superpowers 的 brainstorming 能力讨论设计决策：
 
-# 使用 OpenSpec Skill
-/use-skill open-spec
+```
+请使用 brainstorming 帮我讨论以下设计决策：
 
-# 输入提示
-请根据 SPEC.md 生成 MiniClaw 项目的代码框架，包括：
-1. 目录结构
-2. 每个模块的基础代码（类定义、函数签名）
-3. 必要的配置文件（pyproject.toml、.env.template）
+1. 单文件 vs 多文件：
+   - 教学项目，单文件降低理解门槛
+   - 用注释分隔线组织模块
+
+2. 消息去重策略：
+   - 持久化 JSON vs 内存 set
+   - 需要支持重启恢复
+
+3. 图片处理流程：
+   - 先下载到本地再 base64 编码
+   - vs 直接内存中转
+
+4. 技能扩展方式：
+   - 配置驱动 vs 代码驱动
+   - Sub-Crew 动态创建
 ```
 
-#### 方式 B：手动使用 OpenSpec
+Superpowers 会从多个角度分析 tradeoff，帮助做出合理的设计决策。
 
-```bash
-# 安装 OpenSpec CLI
-pip install openspec-cli
+### 2.2 代码实现
 
-# 从 SPEC.md 生成代码框架
-openspec generate --spec SPEC.md --output miniclaw/
+确定设计后，使用 Superpowers 逐步实现：
 
-# 生成的目录结构
-miniclaw/
-├── __init__.py
-├── main.py
-├── runner.py
-├── feishu/
-│   ├── __init__.py
-│   ├── listener.py
-│   ├── sender.py
-│   └── models.py
-├── agents/
-│   ├── __init__.py
-│   └── main_agent.py
-├── tools/
-│   ├── __init__.py
-│   ├── add_image_tool.py
-│   └── skill_loader_tool.py
-└── session/
-    ├── __init__.py
-    └── manager.py
 ```
+请根据技术规格实现 weblinkcli_agent.py，单文件包含所有模块：
+
+1. Config 类 — 从 os.getenv 读取配置
+2. InboundMessage — Pydantic 模型，from_raw 类方法
+3. LoggedLLM — 继承 crewai.LLM，记录日志
+4. AddImageTool — 图片转 base64 data URI
+5. SkillLoaderTool — 动态创建 Sub-Crew
+6. create_main_agent — 组装 Agent + 工具
+7. WeLink CLI 函数 — subprocess 调用 welink-cli
+8. RepliedTracker — JSON 持久化去重
+9. main() — 轮询主循环
+```
+
+Superpowers 会生成完整的实现代码，包含错误处理、日志记录和类型注解。
 
 ---
 
-### Step 3: 使用 SuperPowers 实现核心逻辑
+## Step 3: 使用 Code Review 审查代码
 
-#### 示例 1：实现 FeishuListener
+### 目的
 
-```bash
-# 在 Claude Code 中
-/use-skill superpowers
+在提交前检查代码质量，发现潜在问题和改进点。
 
-# 输入提示
-请根据 SPEC.md 中的"飞书集成层"部分，实现 FeishuListener 类：
-- 使用 lark-oapi SDK 连接飞书 WebSocket
-- 监听 im.message.receive_v1 事件
-- 解析消息内容为 InboundMessage
-- 如果有图片附件，下载到 workspace
+### 操作
+
+使用 `/code-review` skill 对代码进行审查：
+
+```
+/code-review
 ```
 
-**SuperPowers 会生成**：
-```python
-import lark_oapi as lark
-from lark_oapi.adapter.flask import *
-from miniclaw.feishu.models import InboundMessage
+### 审查维度
 
-class FeishuListener:
-    def __init__(self, app_id: str, app_secret: str, runner: Runner):
-        self.client = lark.Client.builder() \
-            .app_id(app_id) \
-            .app_secret(app_secret) \
-            .build()
-        self.runner = runner
+Code Review 会检查以下方面：
 
-    async def start(self):
-        """启动 WebSocket 监听"""
-        # SuperPowers 生成的完整实现
-        ...
+| 维度 | 检查内容 |
+|------|---------|
+| **正确性** | subprocess 超时处理、JSON 解析异常、去重逻辑 |
+| **安全性** | API Key 不硬编码、subprocess 参数注入防护 |
+| **健壮性** | 网络请求超时、文件 IO 异常、LLM 调用失败 |
+| **性能** | 轮询间隔合理性、图片大小限制、内存占用 |
+| **可维护性** | 模块组织、类型注解、文档字符串 |
+
+### 根据审查结果修复
+
 ```
-
-#### 示例 2：实现 AddImageTool
-
-```bash
-# 输入提示
-请根据 SPEC.md 中的"多模态支持"部分，实现 AddImageTool：
-- 继承 crewai.tools.BaseTool
-- 将图片转为 base64 data URL
-- 支持 PNG、JPG、WEBP 格式
-```
-
-**SuperPowers 会生成**：
-```python
-from crewai.tools import BaseTool
-import base64
-from pathlib import Path
-from pydantic import PrivateAttr
-
-class AddImageTool(BaseTool):
-    name: str = "add_image"
-    description: str = "加载图片到上下文，用于分析图片内容"
-    _supported_formats: set = PrivateAttr(default={".png", ".jpg", ".jpeg", ".webp"})
-
-    def _run(self, image_path: str) -> str:
-        """将图片转为 base64 data URL"""
-        path = Path(image_path)
-        
-        # 验证文件存在
-        if not path.exists():
-            return f"错误：图片不存在 {image_path}"
-        
-        # 验证格式
-        if path.suffix.lower() not in self._supported_formats:
-            return f"错误：不支持的图片格式 {path.suffix}"
-        
-        # 读取并编码
-        with open(path, "rb") as f:
-            image_data = base64.b64encode(f.read()).decode()
-        
-        # 返回 data URL
-        mime_type = f"image/{path.suffix[1:]}"
-        return f"data:{mime_type};base64,{image_data}"
+请根据 code-review 的发现修复问题，重点关注：
+1. 异常处理是否完善
+2. 资源是否正确释放
+3. 边界条件是否覆盖
 ```
 
 ---
 
-### Step 4: 使用 CodeReviewer 审查代码
+## 快速开始
+
+### 前置条件
 
 ```bash
-# 在 Claude Code 中
-/use-skill code-review
+# 安装依赖
+uv sync
 
-# 输入提示
-请审查 miniclaw/runner.py 的实现，重点检查：
-1. 并发安全（asyncio.Queue 使用是否正确）
-2. 资源泄漏（Worker 是否会正确退出）
-3. 错误处理（异常是否被捕获）
-4. 性能瓶颈（是否有不必要的等待）
+# 确保 welink-cli 可用
+welink-cli --version
+
+# 配置根目录 .env（参考项目根目录的 .env 模板）
 ```
 
-**CodeReviewer 会输出**：
-```markdown
-## 代码审查报告
+### 运行
 
-### 问题 1: Worker 退出条件不明确
-**位置**: runner.py:45
-**问题**: Worker 协程没有空闲超时退出机制，可能导致资源泄漏
-**建议**: 添加 asyncio.wait_for 超时，空闲 5 分钟后退出
-
-### 问题 2: 异常未捕获
-**位置**: runner.py:52
-**问题**: _process() 方法调用未用 try-except 包裹
-**建议**: 捕获异常并记录日志，避免单个消息失败导致整个 Worker 退出
-
-### 优化建议
-1. 使用 asyncio.Semaphore 限制并发 Worker 数量
-2. 添加 metrics 统计（消息处理延迟、队列长度）
+```bash
+uv run python test6/weblinkcli_agent.py
 ```
+
+### 测试
+
+在 WeLink 群中发送：
+- 文本消息："帮我整理一下会议纪要"
+- 图片 + 文字：发送截图 + "帮我看看这个报错"
 
 ---
 
-### Step 5: 使用 understand-anything 验证架构
+## 文件说明
 
-```bash
-# 在 Claude Code 中
-/use-skill understand-anything:understand
-
-# 输入提示
-请分析 miniclaw/ 项目，生成：
-1. 模块依赖图
-2. 数据流图（消息从接收到回复的完整路径）
-3. 关键类和函数的知识图谱
-```
-
-**understand-anything 会输出**：
-```
-模块依赖图：
-  main.py
-    ├─> runner.py
-    │     ├─> session/manager.py
-    │     └─> agents/main_agent.py
-    │           ├─> tools/add_image_tool.py
-    │           └─> tools/skill_loader_tool.py
-    └─> feishu/listener.py
-          └─> feishu/sender.py
-
-数据流：
-  飞书 WebSocket
-    → FeishuListener.on_message()
-    → Runner.enqueue()
-    → SessionManager.load()
-    → MainAgent.execute()
-    → FeishuSender.reply()
-```
-
----
-
-## 开发 Skill 对比
-
-| Skill | 输入 | 输出 | 最佳使用时机 |
-|-------|------|------|-------------|
-| **OpenSpec** | SPEC.md | 代码框架 | 项目启动阶段 |
-| **SuperPowers** | 需求描述 | 完整实现 | 核心逻辑开发 |
-| **CodeReviewer** | 代码文件 | 审查报告 | 提交前检查 |
-| **understand-anything** | 项目目录 | 知识图谱 | 接手新项目 |
-
----
-
-## 实际开发示例：实现 Runner
-
-### 1. 从 SPEC.md 提取需求
-
-```markdown
-## Runner 执行引擎
-
-**设计**：per-routing_key 串行队列
-- 同一用户/群的消息按顺序处理
-- 不同用户/群并行处理
-
-```python
-class Runner:
-    def __init__(self):
-        self.queues = defaultdict(asyncio.Queue)
-        self.workers = {}
-
-    async def enqueue(self, msg: InboundMessage):
-        """消息入队"""
-        await self.queues[msg.routing_key].put(msg)
-        if msg.routing_key not in self.workers:
-            self.workers[msg.routing_key] = asyncio.create_task(
-                self._worker(msg.routing_key)
-            )
-```
-```
-
-### 2. 使用 SuperPowers 补全实现
-
-```bash
-/use-skill superpowers
-
-# 输入提示
-请根据 SPEC.md 中的 Runner 设计，补全完整实现：
-1. 添加 Worker 空闲超时退出（5分钟）
-2. 添加异常处理（消息处理失败不影响后续消息）
-3. 添加日志记录（消息接收、处理完成、Worker 创建/退出）
-4. 添加 graceful shutdown（等待所有 Worker 完成）
-```
-
-### 3. 生成的完整代码
-
-```python
-import asyncio
-import logging
-from collections import defaultdict
-from typing import Dict, Optional
-from miniclaw.feishu.models import InboundMessage
-
-logger = logging.getLogger(__name__)
-
-class Runner:
-    def __init__(self, agent, session_manager, idle_timeout: int = 300):
-        self.agent = agent
-        self.session_manager = session_manager
-        self.idle_timeout = idle_timeout
-        self.queues: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
-        self.workers: Dict[str, asyncio.Task] = {}
-        self._shutdown = False
-
-    async def enqueue(self, msg: InboundMessage):
-        """消息入队"""
-        logger.info(f"消息入队: routing_key={msg.routing_key}, message_id={msg.message_id}")
-        await self.queues[msg.routing_key].put(msg)
-        
-        # 创建 Worker（如果不存在）
-        if msg.routing_key not in self.workers:
-            self.workers[msg.routing_key] = asyncio.create_task(
-                self._worker(msg.routing_key)
-            )
-            logger.info(f"创建 Worker: routing_key={msg.routing_key}")
-
-    async def _worker(self, routing_key: str):
-        """Worker 协程"""
-        queue = self.queues[routing_key]
-        
-        while not self._shutdown:
-            try:
-                # 等待消息（带超时）
-                msg = await asyncio.wait_for(
-                    queue.get(), 
-                    timeout=self.idle_timeout
-                )
-                
-                # 处理消息
-                await self._process(routing_key, msg)
-                
-            except asyncio.TimeoutError:
-                # 空闲超时，退出 Worker
-                logger.info(f"Worker 空闲超时，退出: routing_key={routing_key}")
-                break
-            except Exception as e:
-                # 异常处理：记录日志，继续处理下一条消息
-                logger.error(f"消息处理失败: routing_key={routing_key}, error={e}")
-                continue
-        
-        # 清理
-        if routing_key in self.workers:
-            del self.workers[routing_key]
-
-    async def _process(self, routing_key: str, msg: InboundMessage):
-        """处理单条消息"""
-        logger.info(f"开始处理消息: message_id={msg.message_id}")
-        
-        # 加载会话历史
-        history = self.session_manager.get_history(routing_key)
-        
-        # 调用 Agent
-        response = await self.agent.execute(msg, history)
-        
-        # 保存会话
-        self.session_manager.append(routing_key, "user", msg.content)
-        self.session_manager.append(routing_key, "assistant", response)
-        
-        # 发送回复（由 FeishuSender 处理）
-        logger.info(f"消息处理完成: message_id={msg.message_id}")
-
-    async def shutdown(self):
-        """优雅关闭"""
-        logger.info("Runner 开始关闭...")
-        self._shutdown = True
-        
-        # 等待所有 Worker 完成
-        if self.workers:
-            await asyncio.gather(*self.workers.values(), return_exceptions=True)
-        
-        logger.info("Runner 关闭完成")
-```
-
-### 4. 使用 CodeReviewer 审查
-
-```bash
-/use-skill code-review
-
-# 输入提示
-请审查上面生成的 Runner 实现，检查并发安全和资源管理
-```
+| 文件 | 说明 |
+|------|------|
+| `weblinkcli_agent.py` | CrewAI Agent 版本（单文件，主版本） |
+| `welinkcli_llm.py` | 直接 LLM 调用版本（对比参考） |
+| `SPEC.md` | 技术规格文档 |
+| `README.md` | 本文档 |
 
 ---
 
 ## 学习检查清单
 
-- [ ] 理解 SPEC.md 的作用和结构
-- [ ] 知道如何使用 OpenSpec 生成代码框架
-- [ ] 知道如何使用 SuperPowers 实现核心逻辑
-- [ ] 知道如何使用 CodeReviewer 审查代码
-- [ ] 知道如何使用 understand-anything 验证架构
-- [ ] 能够根据 SPEC.md 完成一个模块的开发
-
----
-
-## 常见问题
-
-**Q: OpenSpec 和 SuperPowers 有什么区别？**
-
-OpenSpec 侧重**项目结构**（目录、文件、接口定义），SuperPowers 侧重**代码实现**（业务逻辑、算法、优化）。通常先用 OpenSpec 搭框架，再用 SuperPowers 填内容。
-
-**Q: 这些 Skill 是免费的吗？**
-
-大部分开发 Skill 需要订阅（如 Claude Pro、Cursor Pro）。Claude Code 内置的 Skill（如 code-review、understand-anything）需要 Claude Code 许可证。
-
-**Q: 可以不用这些 Skill，手动开发吗？**
-
-当然可以。SPEC.md 已经提供了完整的代码示例，可以直接复制使用。开发 Skill 只是加速工具，不是必须的。
-
-**Q: 如何让 AI 更好地理解 SPEC.md？**
-
-在提示中明确引用 SPEC.md 的具体章节，例如："请根据 SPEC.md 第 3.2 节的 FeishuListener 设计实现代码"。
-
-**Q: 生成的代码可以直接用吗？**
-
-需要人工审查和调整。开发 Skill 生成的代码是**起点**，不是终点。建议使用 CodeReviewer 检查，并根据实际需求优化。
+- [ ] 理解 OpenSpec 如何将需求转化为技术规格
+- [ ] 理解 Superpowers brainstorming 如何辅助设计决策
+- [ ] 理解 Code Review 的检查维度和修复流程
+- [ ] 能够独立使用三个 Skill 完成一个新模块的开发
