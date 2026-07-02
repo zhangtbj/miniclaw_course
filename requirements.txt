@@ -1,0 +1,8 @@
+# MiniClaw 依赖（与 pyproject.toml 保持同步）
+# 安装：pip install -r requirements.txt
+# 更新：修改版本约束后重新执行上面的命令
+
+crewai
+crewai-tools>=1.15.1
+pydantic
+requests

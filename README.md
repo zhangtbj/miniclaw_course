@@ -6,7 +6,7 @@
 
 ## 项目简介
 
-MiniClaw 是一个**渐进式 AI Agent 开发课程**，通过 6 个递进的实战模块，带你从 LLM 基础调用到完整的飞书 AI 助理开发。
+MiniClaw 是一个**渐进式 AI Agent 开发课程**，通过 6 个递进的实战模块，带你从 LLM 基础调用到完整的 WeLink AI 助理开发。
 
 **你将学到**：
 - LLM 调用与日志调试
@@ -14,7 +14,7 @@ MiniClaw 是一个**渐进式 AI Agent 开发课程**，通过 6 个递进的实
 - 多任务链式工作流
 - 工具调用（文件读写、网络请求）
 - Skills 生态系统
-- 飞书集成 + 多模态理解
+- WeLink 集成 + 多模态理解
 - 使用业界开发 Skill 加速开发
 
 ---
@@ -28,23 +28,35 @@ MiniClaw 是一个**渐进式 AI Agent 开发课程**，通过 6 个递进的实
 git clone <repo-url>
 cd MiniClaw
 
-# 安装依赖（使用 uv）
+# 安装依赖（二选一）
+
+# 方式 A：uv（推荐，自动管理虚拟环境）
 uv sync
+
+# 方式 B：pip + venv
+python3.11 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 
 # 配置环境变量
 cp .env.example .env
 # 编辑 .env 填入你的 API Key
 ```
 
-### 2. 配置 LLM
+### 2. 配置 LLM 与 WeLink
 
-编辑 `.env` 文件：
+编辑 `.env` 文件（参考 `.env.example`）：
 
 ```env
-# 支持任何 OpenAI 兼容接口
+# LLM 配置（支持任何 OpenAI 兼容接口）
 OPENAI_MODEL=deepseek-v4-pro
 OPENAI_API_KEY=sk-your-api-key
 OPENAI_API_BASE=https://api.deepseek.com/v1
+
+# WeLink 配置（test6 需要）
+WELINK_GROUP_ID=your-group-id-here
+CHECK_INTERVAL=30
+RECENT_MINUTES=30
 ```
 
 **支持的 LLM 提供商**：
@@ -53,6 +65,8 @@ OPENAI_API_BASE=https://api.deepseek.com/v1
 - OpenAI
 - 智谱 GLM
 - 其他 OpenAI 兼容接口
+
+> test1-5 只需 LLM 配置；test6 还需 WeLink 配置并安装 `welink-cli`。
 
 ### 3. 运行第一个示例
 
@@ -84,7 +98,7 @@ test4  工具调用         → Agent 操作外部世界（文件、网络）
   ↓
 test5  Skills 生态      → 动态加载技能，可扩展架构
   ↓
-test6  项目实战         → 飞书 AI 助理 + 开发 Skill
+test6  项目实战         → WeLink AI 助理 + 开发 Skill
 ```
 
 ---
@@ -282,22 +296,30 @@ crew.kickoff(inputs={"user_input": "帮我整理会议记录"})
 
 ---
 
-#### Test6 — 项目实战：飞书 AI 助理
+#### Test6 — 项目实战：WeLink AI 助理
 
 **学习目标**：完整项目开发 + 使用业界开发 Skill
 
 | 内容 | 文件 | 说明 |
 |------|------|------|
-| SPEC.md | `SPEC.md` | 项目技术规范 |
-| 开发指南 | `test6/README.md` | 使用 OpenSpec / SuperPowers |
+| CrewAI Agent 版（主） | `weblinkcli_agent.py` | 单文件，集成轮询/Agent/工具/技能 |
+| 直接 LLM 调用版 | `welinkcli_llm.py` | 对比参考，无 Agent 框架 |
+| 技术规范 | `SPEC.md` | 项目架构与模块定义 |
+| 开发指南 | `test6/README.md` | OpenSpec / SuperPowers / Code Review 工作流 |
+
+**运行**：
+```bash
+# 需先配置 WELINK_GROUP_ID 并确保 welink-cli 可用
+uv run python test6/weblinkcli_agent.py
+```
 
 **学习重点**：
-- 阅读 SPEC.md 理解完整架构
-- 使用 OpenSpec 生成代码框架
-- 使用 SuperPowers 实现核心逻辑
-- 使用 CodeReviewer 审查代码
+- 阅读 SPEC.md 理解单文件完整架构
+- 使用 OpenSpec 生成需求规格
+- 使用 SuperPowers 进行 brainstorming 和实现
+- 使用 Code Review 审查代码
 
-📖 **详细文档**：[test6/README.md](test6/README.md) | [SPEC.md](SPEC.md)
+📖 **详细文档**：[test6/README.md](test6/README.md) | [SPEC.md](test6/SPEC.md)
 
 ---
 
@@ -306,9 +328,11 @@ crew.kickoff(inputs={"user_input": "帮我整理会议记录"})
 ```
 MiniClaw/
 ├── README.md              # 本文件（用户手册）
-├── SPEC.md                # test6 项目技术规范
-├── pyproject.toml         # 依赖管理
-├── .env                   # 环境变量（需创建）
+├── pyproject.toml         # 依赖管理（uv）
+├── requirements.txt       # 依赖清单（pip）
+├── uv.lock                # 依赖锁定（uv）
+├── .env.example           # 环境变量模板
+├── .env                   # 环境变量（需创建，已 gitignore）
 │
 ├── llm/                   # 自定义 LLM
 │   ├── __init__.py
@@ -339,8 +363,11 @@ MiniClaw/
 │   ├── README.md
 │   └── agent_skills.py
 │
-└── test6/                 # 项目实战
-    └── README.md
+└── test6/                 # 项目实战：WeLink AI 助理
+    ├── README.md              # 开发指南（开发 Skill 工作流）
+    ├── SPEC.md                # 技术规范
+    ├── weblinkcli_agent.py    # CrewAI Agent 版（单文件，主版本）
+    └── welinkcli_llm.py       # 直接 LLM 调用版（对比参考）
 ```
 
 ---
@@ -430,10 +457,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-如果不想用 uv，也可以用 pip：
+如果不想用 uv，也可以用 pip（项目已提供 `requirements.txt`）：
+
 ```bash
-pip install crewai crewai-tools
+python3.11 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -r requirements.txt      # 安装
+pip install --upgrade -r requirements.txt  # 更新依赖
 ```
+
+> uv 用 `uv sync` 安装/更新；pip 用 `pip install -r requirements.txt`，更新时重新执行同一命令（可加 `--upgrade`）。
 
 ---
 
@@ -464,12 +497,17 @@ uv run python test5/agent_skills.py
 
 ### Q: test6 的代码在哪里？
 
-test6 是项目实战模块，完整代码在 [SPEC.md](SPEC.md) 中定义。你需要：
-1. 阅读 SPEC.md 理解架构
-2. 使用 OpenSpec / SuperPowers 生成代码
-3. 参考 test6/README.md 的开发指南
+test6 是项目实战模块，已提供完整可运行的代码：
 
-这是刻意设计的——让你体验真实的 AI 辅助开发流程。
+- `weblinkcli_agent.py` — CrewAI Agent 版（单文件，主版本），集成消息轮询、Agent 推理、工具调用、技能加载
+- `welinkcli_llm.py` — 直接 LLM 调用版（对比参考，无 Agent 框架）
+
+```bash
+# 运行前需配置 WELINK_GROUP_ID，并确保 welink-cli 已安装登录
+uv run python test6/weblinkcli_agent.py
+```
+
+阅读 [test6/SPEC.md](test6/SPEC.md) 理解架构，参考 [test6/README.md](test6/README.md) 体验用 OpenSpec / SuperPowers / Code Review 的开发流程。
 
 ---
 
@@ -532,18 +570,18 @@ SKILLS = [
 
 ### 3. 多模态支持
 
-使用 `AddImageTool` 加载图片：
+使用 `AddImageTool` 加载图片（test6 中内置于 `weblinkcli_agent.py`）：
 
 ```python
-from tools.add_image_tool import AddImageTool
+from crewai.tools import BaseTool
 
-agent = Agent(
-    tools=[AddImageTool()],
+class AddImageTool(BaseTool):
+    name: str = "add_image"
+    # 将本地图片转为 base64 data URI，供多模态 LLM 理解
     ...
-)
-
-# Agent 可以分析图片内容
 ```
+
+📖 **源码**：[test6/weblinkcli_agent.py](test6/weblinkcli_agent.py) 中的 `AddImageTool`
 
 ---
 
@@ -560,9 +598,9 @@ agent = Agent(
 - **CodeReviewer**：自动代码审查
 - **understand-anything**：理解代码库（Claude Code 内置）
 
-### 飞书开放平台
-- [飞书开放平台](https://open.feishu.cn/)
-- [机器人开发指南](https://open.feishu.cn/document/home/develop-a-bot-in-5-minutes/create-an-app)
+### WeLink CLI
+- WeLink CLI（`welink-cli`）：用于群消息收发，需在本地安装并 `welink-cli login` 登录
+- 常用命令：`im query-history-message`（拉取历史消息）、`im send-to-group`（发送群消息）
 
 ---
 
@@ -573,7 +611,7 @@ agent = Agent(
 1. **先跑通**：按顺序运行 test1-5，观察输出
 2. **再读码**：阅读每个 test 的 README.md，理解核心概念
 3. **后修改**：尝试修改 backstory、Task description，观察效果
-4. **终实战**：阅读 SPEC.md，尝试用 OpenSpec 生成代码
+4. **终实战**：阅读 [test6/SPEC.md](test6/SPEC.md)，运行并修改 WeLink AI 助理
 
 ### 关键概念速查
 
