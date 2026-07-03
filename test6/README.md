@@ -1,185 +1,173 @@
-# Test6 — 使用开发 Skill 完成 MiniClaw 开发
+# Test6 — 用开发 Skill 交付 MiniClaw WeLink 助理
 
-## 学习目标
+本目录演示一条**业界主流的 AI 辅助开发流水线**：用三个开发 Skill 把一个想法变成经过审查的可运行代码。
 
-掌握如何使用 OpenSpec、Superpowers、Code Review 三个开发 Skill 串联完成 AI Agent 项目开发。
+```
+想法/需求 ──OpenSpec──▶ SPEC.md（技术规格）
+                            │
+                            ▼
+                     Superpowers：brainstorming → 开发实现
+                            │
+                            ▼
+                       Code Review：审查 → 修复
+                            │
+                            ▼
+                       welinkcli_agent.py（交付物）
+```
+
+> 本目录已预装相关 Skill（见 `test6/.opencode/skills/`）。`welinkcli_agent.py` 是按本流程产出的**参考实现**，`SPEC.md` 是它的实现契约。
 
 ---
 
-## 开发工作流
+## 三个 Skill 各做什么
 
-```
-1. OpenSpec        →  从需求描述生成技术规格（SPEC）
-2. Superpowers     →  brainstorming + 代码实现
-3. Code Review     →  审查代码质量与潜在问题
-```
-
----
-
-## Step 1: 使用 OpenSpec 生成需求规格
-
-### 目的
-
-将模糊的产品需求转化为结构化的技术规格文档，包含架构设计、模块划分、核心接口定义。
-
-### 操作
-
-在 Claude Code 中使用 `/openspec` skill（或通过 `.opencode/skills/openspec/` 安装），输入项目需求：
-
-```
-请根据以下需求生成技术规格：
-
-项目名称：MiniClaw WeLink CLI AI 助理
-核心需求：
-- 监听 WeLink 群消息（文本和图片）
-- 使用 CrewAI Agent 处理消息并生成回复
-- 支持多模态（图片理解）
-- 支持技能扩展（会议纪要、图片分析）
-- 通过 welink-cli 收发消息
-```
-
-### OpenSpec 输出
-
-OpenSpec 会生成结构化的技术规格，包含：
-
-- **架构设计**：数据流图、模块划分
-- **核心接口**：InboundMessage 模型、Config 配置类、函数签名
-- **模块职责**：每个区块的输入/输出/职责定义
-- **配置说明**：环境变量、依赖清单
-
-> 生成的规格内容可参考本目录下的 `SPEC.md`，作为后续开发的蓝图。
+| 阶段 | Skill | 输入 | 输出 | 解决的问题 |
+|------|-------|------|------|-----------|
+| ① 规格 | **OpenSpec**（`openspec-propose` 等） | 自然语言需求 | `SPEC.md` | 把"要做什么"变成"怎么做"的契约 |
+| ② 开发 | **Superpowers**（`brainstorming` + `using-superpowers`） | `SPEC.md` | 实现代码 | 先想清楚再写，避免返工 |
+| ③ 审查 | **Code Review**（`code-review-skill` / `/code-review`） | 实现代码 | 缺陷清单 + 修复 | 上线前兜底，抓 bug 与坏味道 |
 
 ---
 
-## Step 2: 使用 Superpowers 进行 Brainstorming 和开发
+## 阶段 ① 用 OpenSpec 生成 SPEC.md
 
-### 2.1 Brainstorming — 设计讨论
+### 为什么先写 SPEC？
 
-在编码前，使用 Superpowers 的 brainstorming 能力讨论设计决策：
+直接让 AI 写代码，它只会写"大概对"的代码。先把需求固化为**实现契约**（接口签名、数据格式、错误处理、验收标准），后续每一步都有据可依，AI 也不容易跑偏。本目录的 [`SPEC.md`](SPEC.md) 就是这一步的产物——**仅凭它即可写出 `welinkcli_agent.py`**。
 
-```
-请使用 brainstorming 帮我讨论以下设计决策：
+### 怎么做
 
-1. 单文件 vs 多文件：
-   - 教学项目，单文件降低理解门槛
-   - 用注释分隔线组织模块
-
-2. 消息去重策略：
-   - 持久化 JSON vs 内存 set
-   - 需要支持重启恢复
-
-3. 图片处理流程：
-   - 先下载到本地再 base64 编码
-   - vs 直接内存中转
-
-4. 技能扩展方式：
-   - 配置驱动 vs 代码驱动
-   - Sub-Crew 动态创建
-```
-
-Superpowers 会从多个角度分析 tradeoff，帮助做出合理的设计决策。
-
-### 2.2 代码实现
-
-确定设计后，使用 Superpowers 逐步实现：
+OpenSpec 以"提案（proposal）"驱动，把需求拆成结构化规格。在 OpenCode / Claude Code 中调用 `openspec-propose`，给出需求：
 
 ```
-请根据技术规格实现 weblinkcli_agent.py，单文件包含所有模块：
+openspec-propose
 
-1. Config 类 — 从 os.getenv 读取配置
-2. InboundMessage — Pydantic 模型，from_raw 类方法
-3. LoggedLLM — 继承 crewai.LLM，记录日志
-4. AddImageTool — 图片转 base64 data URI
-5. SkillLoaderTool — 动态创建 Sub-Crew
-6. create_main_agent — 组装 Agent + 工具
-7. WeLink CLI 函数 — subprocess 调用 welink-cli
-8. RepliedTracker — JSON 持久化去重
-9. main() — 轮询主循环
+需求：开发一个 WeLink 群聊 AI 助理（welinkcli_agent.py，单文件）
+- 通过 welink-cli（子进程）轮询群消息、发送回复
+- 用 CrewAI Agent 生成回复，复用根目录 llm/llm.py 的 LoggedLLM
+- 支持多模态（图片理解）和技能扩展（会议纪要、图片分析）
+- 消息去重（持久化），不重复回复、不回复自身
+- 配置走根目录 .env
 ```
 
-Superpowers 会生成完整的实现代码，包含错误处理、日志记录和类型注解。
+随后用配套 Skill 推进：
+
+- `openspec-apply-change` —— 把提案落成规格条目
+- `openspec-sync-specs` —— 同步规格
+- `openspec-explore` —— 浏览已有规格
+
+### 产出要求
+
+SPEC 至少要写清（对照 [`SPEC.md`](SPEC.md) 的章节）：
+
+1. **外部接口契约**：welink-cli 的命令格式与返回 JSON 结构（`respData.chatInfo`、`msgId`、`serverSendTime`…）
+2. **模块实现契约**：每个类/函数的签名、参数、返回值、异常处理
+3. **关键规则**：去重逻辑、主循环过滤（过短/自身消息要先 `mark_replied` 再跳过）、排序（按时间降序）
+4. **验收标准**：可逐条勾选的测试场景
 
 ---
 
-## Step 3: 使用 Code Review 审查代码
+## 阶段 ② 用 Superpowers 头脑风暴 + 开发
 
-### 目的
+### 2.1 先 brainstorming，再动手
 
-在提交前检查代码质量，发现潜在问题和改进点。
-
-### 操作
-
-使用 `/code-review` skill 对代码进行审查：
+`brainstorming` Skill 的硬性要求：**任何创造性工作开始前，先讨论清楚再实现**。在编码前调用它，把 SPEC 里的开放决策聊透：
 
 ```
-/code-review
+brainstorming
+
+基于 SPEC.md，帮我讨论几个设计决策：
+1. 单文件 vs 多文件：教学项目倾向单文件，用注释分块
+2. 去重：持久化 JSON（支持重启恢复）vs 内存 set
+3. 图片处理：先下载到本地再 base64，还是内存中转
+4. 技能扩展：配置驱动 + 动态 Sub-Crew
 ```
 
-### 审查维度
+brainstorming 会逐步追问、列 tradeoff，直到形成一个**你确认过的设计**，再进入实现。这一步能省掉后面大量返工。
 
-Code Review 会检查以下方面：
+### 2.2 按 SPEC 实现
 
-| 维度 | 检查内容 |
-|------|---------|
-| **正确性** | subprocess 超时处理、JSON 解析异常、去重逻辑 |
-| **安全性** | API Key 不硬编码、subprocess 参数注入防护 |
-| **健壮性** | 网络请求超时、文件 IO 异常、LLM 调用失败 |
-| **性能** | 轮询间隔合理性、图片大小限制、内存占用 |
-| **可维护性** | 模块组织、类型注解、文档字符串 |
-
-### 根据审查结果修复
+设计定稿后，用 Superpowers 的开发类 Skill（`using-superpowers` / `executing-plans` / `subagent-driven-development`）按 SPEC 的模块布局逐步实现：
 
 ```
-请根据 code-review 的发现修复问题，重点关注：
-1. 异常处理是否完善
-2. 资源是否正确释放
-3. 边界条件是否覆盖
+请按 SPEC.md 的"单文件模块布局"顺序实现 welinkcli_agent.py：
+配置 → InboundMessage → 导入 LoggedLLM → AddImageTool →
+SKILLS → SkillLoaderTool → create_main_agent → WeLink CLI 函数 →
+RepliedTracker → handle_message/build_prompt → main()
 ```
+
+要点（SPEC 已写死，实现时严格遵守）：
+- LLM 用 `from llm.llm import LoggedLLM`，构造时**显式传 `model`**。
+- `SkillLoaderTool.llm` 字段类型用 `Any`（避免 crewai 包装后 pydantic 校验失败）。
+- 主循环过滤时，过短/自身消息要先 `mark_replied` 再 `continue`，否则队列卡死。
 
 ---
 
-## 快速开始
+## 阶段 ③ 用 Code Review 审查并修复
 
-### 前置条件
+### 审查
+
+实现完成后，上线前过一遍 Code Review。两种用法：
+
+- **Claude Code**：直接 `/code-review`（已内置），它会多角度扫描并产出结构化缺陷清单。
+- **OpenCode Skill**：`requesting-code-review` / `code-review-skill`。
+
+```
+/code-review test6/welinkcli_agent.py
+```
+
+审查维度参考：
+
+| 维度 | 本项目重点 |
+|------|-----------|
+| 正确性 | subprocess 超时、JSON 解析异常、`respData` 为 null、去重逻辑 |
+| 健壮性 | 网络超时、文件 IO、LLM 失败不中断主循环 |
+| 安全 | API Key 走环境变量不硬编码 |
+| 可维护性 | 类型注解、docstring、模块边界 |
+
+### 修复
+
+把审查出的缺陷交回开发 Skill 修复，再用 `verification-before-completion` / `systematic-debugging` 验证，最后 `receiving-code-review` 复核。
+
+> 本项目的 `welinkcli_agent.py` 已经过一轮 Code Review：修复了消息队列卡死、未排序、`respData` 为 null 崩溃、配置非整数启动崩溃等缺陷。
+
+---
+
+## 快速开始（运行参考实现）
 
 ```bash
-# 安装依赖
-uv sync
+# 1. 依赖
+uv sync                          # 或 pip install -r requirements.txt
 
-# 确保 welink-cli 可用
+# 2. 配置根目录 .env（OPENAI_*、WELINK_GROUP_ID 等）
+
+# 3. 确保 welink-cli 可用并已登录
 welink-cli --version
 
-# 配置根目录 .env（参考项目根目录的 .env 模板）
+# 4. 运行
+uv run python test6/welinkcli_agent.py
 ```
 
-### 运行
-
-```bash
-uv run python test6/weblinkcli_agent.py
-```
-
-### 测试
-
-在 WeLink 群中发送：
-- 文本消息："帮我整理一下会议纪要"
-- 图片 + 文字：发送截图 + "帮我看看这个报错"
+在 WeLink 群里测试：发文本"帮我整理会议纪要"；发截图 + "看看这个报错"。
 
 ---
 
 ## 文件说明
 
-| 文件 | 说明 |
+| 文件 | 角色 |
 |------|------|
-| `weblinkcli_agent.py` | CrewAI Agent 版本（单文件，主版本） |
-| `welinkcli_llm.py` | 直接 LLM 调用版本（对比参考） |
-| `SPEC.md` | 技术规格文档 |
-| `README.md` | 本文档 |
+| `SPEC.md` | 实现契约（阶段①产物，开发依据） |
+| `welinkcli_agent.py` | 参考实现（阶段②③产物，CrewAI Agent 版） |
+| `welinkcli_llm.py` | 直接 LLM 调用版（对比参考，不走 Agent） |
+| `README.md` | 本文档（开发流程指南） |
+| `.opencode/skills/` | 预装的开发 Skill（OpenSpec / Superpowers / Code Review） |
 
 ---
 
 ## 学习检查清单
 
-- [ ] 理解 OpenSpec 如何将需求转化为技术规格
-- [ ] 理解 Superpowers brainstorming 如何辅助设计决策
-- [ ] 理解 Code Review 的检查维度和修复流程
-- [ ] 能够独立使用三个 Skill 完成一个新模块的开发
+- [ ] 能说清为什么"先写 SPEC 再写代码"
+- [ ] 会用 OpenSpec 把需求转成带验收标准的 SPEC
+- [ ] 会在编码前用 brainstorming 讨论设计决策
+- [ ] 会用 `/code-review` 找缺陷并修复
+- [ ] 能独立用这条流水线交付一个新模块

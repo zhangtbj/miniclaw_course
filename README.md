@@ -48,25 +48,25 @@ cp .env.example .env
 编辑 `.env` 文件（参考 `.env.example`）：
 
 ```env
-# LLM 配置（支持任何 OpenAI 兼容接口）
-OPENAI_MODEL=deepseek-v4-pro
-OPENAI_API_KEY=sk-your-api-key
-OPENAI_API_BASE=https://api.deepseek.com/v1
+# LLM 配置（默认使用内部小鲁班网关，支持任何 OpenAI 兼容接口）
+OPENAI_MODEL=auto                      # auto 对应 Qwen-V3.5-35B-A3B（支持多模态）
+OPENAI_API_KEY=你的密钥                  # 向小鲁班发送"获取apikey"获取
+OPENAI_API_BASE=http://xiaoluban.rnd.huawei.com:80/y/llm/v1
+OTEL_SDK_DISABLED=true
+NO_PROXY=xiaoluban.rnd.huawei.com
 
 # WeLink 配置（test6 需要）
-WELINK_GROUP_ID=your-group-id-here
-CHECK_INTERVAL=30
-RECENT_MINUTES=30
+WELINK_GROUP_ID=your-group-id-here     # 从群配置获取
+CHECK_INTERVAL=10
+RECENT_MINUTES=10
 ```
 
 **支持的 LLM 提供商**：
-- DeepSeek（推荐）
-- 通义千问（阿里云 DashScope）
-- OpenAI
-- 智谱 GLM
-- 其他 OpenAI 兼容接口
+- 小鲁班（内部默认，model 设为 `auto`）
+- DeepSeek / 通义千问（阿里云 DashScope）/ OpenAI / 智谱 GLM
+- 其他 OpenAI 兼容接口（更换 `model` 和 `base_url` 即可）
 
-> test1-5 只需 LLM 配置；test6 还需 WeLink 配置并安装 `welink-cli`。
+> test1-5 只需 LLM 配置；test6 还需 WeLink 配置并安装 `welink-cli`。所有脚本通过 `load_dotenv` 自动读取根目录 `.env`。
 
 ### 3. 运行第一个示例
 
@@ -302,7 +302,7 @@ crew.kickoff(inputs={"user_input": "帮我整理会议记录"})
 
 | 内容 | 文件 | 说明 |
 |------|------|------|
-| CrewAI Agent 版（主） | `weblinkcli_agent.py` | 单文件，集成轮询/Agent/工具/技能 |
+| CrewAI Agent 版（主） | `welinkcli_agent.py` | 单文件，集成轮询/Agent/工具/技能 |
 | 直接 LLM 调用版 | `welinkcli_llm.py` | 对比参考，无 Agent 框架 |
 | 技术规范 | `SPEC.md` | 项目架构与模块定义 |
 | 开发指南 | `test6/README.md` | OpenSpec / SuperPowers / Code Review 工作流 |
@@ -310,7 +310,7 @@ crew.kickoff(inputs={"user_input": "帮我整理会议记录"})
 **运行**：
 ```bash
 # 需先配置 WELINK_GROUP_ID 并确保 welink-cli 可用
-uv run python test6/weblinkcli_agent.py
+uv run python test6/welinkcli_agent.py
 ```
 
 **学习重点**：
@@ -366,7 +366,7 @@ MiniClaw/
 └── test6/                 # 项目实战：WeLink AI 助理
     ├── README.md              # 开发指南（开发 Skill 工作流）
     ├── SPEC.md                # 技术规范
-    ├── weblinkcli_agent.py    # CrewAI Agent 版（单文件，主版本）
+    ├── welinkcli_agent.py    # CrewAI Agent 版（单文件，主版本）
     └── welinkcli_llm.py       # 直接 LLM 调用版（对比参考）
 ```
 
@@ -470,13 +470,11 @@ pip install --upgrade -r requirements.txt  # 更新依赖
 
 ---
 
-### Q: 为什么选择 DeepSeek？
+### Q: 为什么默认用小鲁班？还能换别的 LLM 吗？
 
-- **性价比高**：价格约为 GPT-4 的 1/10
-- **中文能力强**：适合国内课程
-- **OpenAI 兼容**：代码无需修改即可切换到其他 LLM
+本课程默认使用内部 **小鲁班** LLM 网关（`OPENAI_API_BASE` 指向 `xiaoluban.rnd.huawei.com`），`OPENAI_MODEL=auto` 对应 Qwen-V3.5-35B-A3B（支持多模态）。API Key 向小鲁班发送"获取apikey"即可获得。
 
-如果你有其他 LLM 的 API Key，只需修改 `.env` 即可。
+由于代码走的是 **OpenAI 兼容接口**，只需修改 `.env` 中的 `model` 和 `base_url` 即可切换到 DeepSeek、通义千问、OpenAI、智谱 GLM 等。
 
 ---
 
@@ -499,12 +497,12 @@ uv run python test5/agent_skills.py
 
 test6 是项目实战模块，已提供完整可运行的代码：
 
-- `weblinkcli_agent.py` — CrewAI Agent 版（单文件，主版本），集成消息轮询、Agent 推理、工具调用、技能加载
+- `welinkcli_agent.py` — CrewAI Agent 版（单文件，主版本），集成消息轮询、Agent 推理、工具调用、技能加载
 - `welinkcli_llm.py` — 直接 LLM 调用版（对比参考，无 Agent 框架）
 
 ```bash
 # 运行前需配置 WELINK_GROUP_ID，并确保 welink-cli 已安装登录
-uv run python test6/weblinkcli_agent.py
+uv run python test6/welinkcli_agent.py
 ```
 
 阅读 [test6/SPEC.md](test6/SPEC.md) 理解架构，参考 [test6/README.md](test6/README.md) 体验用 OpenSpec / SuperPowers / Code Review 的开发流程。
@@ -570,7 +568,7 @@ SKILLS = [
 
 ### 3. 多模态支持
 
-使用 `AddImageTool` 加载图片（test6 中内置于 `weblinkcli_agent.py`）：
+使用 `AddImageTool` 加载图片（test6 中内置于 `welinkcli_agent.py`）：
 
 ```python
 from crewai.tools import BaseTool
@@ -581,7 +579,7 @@ class AddImageTool(BaseTool):
     ...
 ```
 
-📖 **源码**：[test6/weblinkcli_agent.py](test6/weblinkcli_agent.py) 中的 `AddImageTool`
+📖 **源码**：[test6/welinkcli_agent.py](test6/welinkcli_agent.py) 中的 `AddImageTool`
 
 ---
 

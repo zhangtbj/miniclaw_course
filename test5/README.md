@@ -15,9 +15,9 @@
 ### 1. 配置 `.env`（项目根目录）
 
 ```env
-OPENAI_MODEL=deepseek-v4-pro
-OPENAI_API_KEY=sk-你的密钥
-OPENAI_API_BASE=https://api.deepseek.com/v1
+OPENAI_MODEL=auto
+OPENAI_API_KEY=你的密钥
+OPENAI_API_BASE=http://xiaoluban.rnd.huawei.com:80/y/llm/v1
 ```
 
 ### 2. 安装依赖
