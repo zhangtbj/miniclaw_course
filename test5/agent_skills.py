@@ -9,9 +9,12 @@ Skills 生态简化示例：办公小助手
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
+
+load_dotenv(project_root / ".env")
 
 from crewai import Agent, Task, Crew
 from llm.llm import LoggedLLM
