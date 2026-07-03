@@ -1,13 +1,18 @@
 import os
+import sys
 import time
 import json
 import subprocess
 import requests
 from datetime import datetime
 from pathlib import Path
+from dotenv import load_dotenv
 
 # ========== 配置区（从根目录 .env 读取） ==========
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
 
+load_dotenv(project_root / ".env")
 
 def _env_int(name, default):
     """读取整数型环境变量，非法值在启动期即报错。"""
@@ -166,6 +171,7 @@ def main():
             messages = get_recent_messages(GROUP_ID, RECENT_MINUTES)
 
             if not messages:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INFO] 群中无任何消息，继续监听")
                 time.sleep(CHECK_INTERVAL)
                 continue
 
@@ -175,6 +181,7 @@ def main():
 
             # 2. 判断是否已回复过
             if msg_id in replied_msgs:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INFO] 群中无未回复消息，继续监听")
                 time.sleep(CHECK_INTERVAL)
                 continue
 
