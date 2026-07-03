@@ -6,3 +6,4 @@ crewai
 crewai-tools>=1.15.1
 pydantic
 requests
+python-dotenv
