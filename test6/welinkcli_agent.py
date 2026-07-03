@@ -10,17 +10,27 @@ import base64
 import json
 import logging
 import os
+import sys
 import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from dotenv import load_dotenv
 import requests
-from crewai import Agent, Crew, LLM, Task
+from crewai import Agent, Crew, Task
 from crewai.tools import BaseTool
 from crewai_tools import FileReadTool, FileWriterTool
 from pydantic import BaseModel
+
+from llm.llm import LoggedLLM
+
+# ========== 配置区（从根目录 .env 读取） ==========
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
+
+load_dotenv(project_root / ".env")
 
 # ──────────────────────────── 日志 ────────────────────────────
 
@@ -103,43 +113,6 @@ class InboundMessage(BaseModel):
             msg_id=str(raw.get("msgId", "")),
             sender_name=raw.get("senderName", raw.get("sender", "未知")),
         )
-
-
-# ──────────────────────────── LLM ────────────────────────────
-
-
-class LoggedLLM(LLM):
-    """记录请求/响应的 LLM 封装，提供调试可见性。"""
-
-    def __init__(self, **kwargs) -> None:
-        defaults = {
-            "model": config.OPENAI_MODEL,
-            "base_url": config.OPENAI_API_BASE,
-            "api_key": config.OPENAI_API_KEY,
-        }
-        defaults.update(kwargs)
-        super().__init__(**defaults)
-
-    def call(self, *args: Any, **kwargs: Any) -> str:
-        """发起 LLM 调用并记录日志。"""
-        logger.info("LLM request: %s", args[0] if args else kwargs)
-        result = super().call(*args, **kwargs)
-        logger.info("LLM response: %s", result)
-        return result
-
-
-def create_llm() -> LoggedLLM:
-    """构造一个默认配置的 LoggedLLM 实例。
-
-    显式传 model 是必须的：crewai 的 LLM.__new__() 在 __init__ 之前运行，
-    __init__ 里的 defaults 来不及生效，否则抛 'missing model'。
-    """
-    return LoggedLLM(model=config.OPENAI_MODEL)
-
-
-# ──────────────────────────── 工具：图片加载 ────────────────────────────
-
-
 class AddImageTool(BaseTool):
     """将本地图片转为 base64 data URI，供多模态 LLM 理解图片内容。"""
 
@@ -401,7 +374,7 @@ def handle_message(agent: Agent, prompt: str) -> str | None:
     """调用 Agent 生成回复。"""
     try:
         result = agent.kickoff(prompt)
-        return result.raw if hasattr(result, "raw") else str(result)
+        return str(result)
     except Exception as e:
         logger.error("Agent 执行失败: %s", e)
         return None
@@ -438,7 +411,11 @@ def main() -> None:
 
     workspace = config.ensure_workspace(group_id)
     images_dir = workspace / "images"
-    llm = create_llm()
+    llm = LoggedLLM(
+        model=config.OPENAI_MODEL,
+        base_url=config.OPENAI_API_BASE,
+        api_key=config.OPENAI_API_KEY,
+    )
     agent = create_main_agent(llm)
     tracker = RepliedTracker(workspace)
 
@@ -449,12 +426,14 @@ def main() -> None:
         try:
             messages = get_recent_messages(group_id, config.RECENT_MINUTES)
             if not messages:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INFO] 群中无任何消息，继续监听")
                 time.sleep(config.CHECK_INTERVAL)
                 continue
 
             latest = messages[0]
 
             if tracker.is_replied(latest.msg_id):
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INFO] 群中无未回复消息，继续监听")
                 time.sleep(config.CHECK_INTERVAL)
                 continue
 
