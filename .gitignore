@@ -10,9 +10,6 @@ venv/
 env/
 ENV/
 
-# uv
-# uv.lock 应提交（锁定依赖），故不忽略
-
 # ===== 密钥 / 环境变量 =====
 .env
 .env.local

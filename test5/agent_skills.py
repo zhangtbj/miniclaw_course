@@ -8,7 +8,9 @@ Skills 生态简化示例：办公小助手
 
 import sys
 import os
+import re
 from pathlib import Path
+import yaml
 from dotenv import load_dotenv
 
 project_root = Path(__file__).resolve().parent.parent
@@ -22,49 +24,39 @@ from tools.skill_loader_tool import SkillLoaderTool
 
 
 # ==============================================================================
-# 定义办公技能（Skill）
+# 从 skills/ 目录加载技能（每个技能是一个 SKILL.md 文件）
 # ==============================================================================
+# 目录约定：skills/<skill_name>/SKILL.md
+# SKILL.md 沿用标准 skill 格式：frontmatter 只声明 name / description，
+# 正文写操作指引（处理步骤 + 输出要求）。
+# 这比把技能写死在数组里更接近真实 skill 生态：新增技能只要加一个目录。
 
-SKILLS = [
-    {
-        "name": "meeting_summary",
-        "type": "task",
-        "description": "将杂乱的会议记录整理为结构化纪要",
-        "input_schema": {
-            "raw_notes": "原始会议记录文本"
-        },
-        "output_schema": {
-            "attendees": "参会人列表",
-            "key_decisions": "关键决策",
-            "action_items": "待办事项"
-        }
-    },
-    {
-        "name": "email_drafter",
-        "type": "task",
-        "description": "根据要点生成专业的商务邮件",
-        "input_schema": {
-            "recipient": "收件人",
-            "purpose": "邮件目的",
-            "key_points": "核心要点列表"
-        },
-        "output_schema": {
-            "subject": "邮件主题",
-            "body": "邮件正文"
-        }
-    },
-    {
-        "name": "task_extractor",
-        "type": "task",
-        "description": "从文本中提取待办任务",
-        "input_schema": {
-            "text": "源文本"
-        },
-        "output_schema": {
-            "tasks": [{"owner": "负责人", "task": "任务描述", "deadline": "截止时间"}]
-        }
-    }
-]
+
+def load_skills(skills_dir: Path) -> list[dict]:
+    """读取 skills_dir 下每个子目录的 SKILL.md，解析为技能配置列表。"""
+    skills: list[dict] = []
+    for skill_file in sorted(skills_dir.glob("*/SKILL.md")):
+        text = skill_file.read_text(encoding="utf-8")
+
+        # 拆分 YAML frontmatter 与 markdown 正文
+        match = re.match(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", text, re.DOTALL)
+        if not match:
+            raise ValueError(f"{skill_file} 缺少 YAML frontmatter（--- ... ---）")
+
+        meta = yaml.safe_load(match.group(1))
+        body = match.group(2).strip()
+
+        skills.append({
+            "name": meta["name"],
+            "description": meta["description"],
+            "instructions": body,
+        })
+
+    return skills
+
+
+SKILLS_DIR = Path(__file__).parent / "skills"
+SKILLS = load_skills(SKILLS_DIR)
 
 
 # ==============================================================================

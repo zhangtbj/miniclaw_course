@@ -23,7 +23,7 @@ OPENAI_API_BASE=http://xiaoluban.rnd.huawei.com:80/y/llm/v1
 ### 2. 安装依赖
 
 ```bash
-uv sync
+pip install -r requirements.txt        # 在根目录 .venv 中执行
 ```
 
 > 需要 `crewai-tools` 包（已包含在 pyproject.toml 中）
@@ -33,8 +33,50 @@ uv sync
 ## 运行
 
 ```bash
-uv run python test4/agent_tools.py
+python test4/agent_tools.py
 ```
+
+---
+
+## 运行流程图
+
+```
+                  启动 agent_tools.py
+                          │
+                          ▼
+   ┌────────────────────────────────────────┐
+   │ ① 创建 Agent                           │
+   │   note_agent                           │
+   │   tools=[FileWriterTool, FileReadTool] │
+   │ ② 创建 Task + Crew                     │
+   └──────────────────┬─────────────────────┘
+                      │
+           ┌──────────┴───────────┐
+           ▼                      ▼
+    ┌───────────────┐      ┌────────────────┐
+    │ 第一轮：记笔记 │      │ 第二轮：查笔记  │
+    ├───────────────┤      ├────────────────┤
+    │ kickoff(      │      │ kickoff(       │
+    │  "帮我记三条") │      │  "我记了哪些") │
+    │   │           │      │   │            │
+    │   ▼           │      │   ▼            │
+    │ Agent 推理    │      │ Agent 推理     │
+    │   │           │      │   │            │
+    │   ▼ 选工具     │      │   ▼ 选工具      │
+    │ FileWriterTool│      │ FileReadTool  │
+    │   │           │      │   │            │
+    │   ▼           │      │   ▼            │
+    │ 写入 notes.md │      │ 读取 notes.md │
+    │   │           │      │   │            │
+    │   ▼           │      │   ▼            │
+    │ "已记录 3 条" │      │ "你记了…"     │
+    └───────┬───────┘      └───────┬────────┘
+            │                      │
+            └──────▶ notes.md ◀────┘
+                 （文件系统共享状态）
+```
+
+> 两轮 `kickoff` 是各自独立的 LLM 调用，但都读写同一个 `notes.md`，靠文件系统在轮次之间共享状态。Agent 根据用户输入自主决定用哪个工具。
 
 ---
 

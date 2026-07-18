@@ -23,7 +23,7 @@ OPENAI_API_BASE=http://xiaoluban.rnd.huawei.com:80/y/llm/v1
 ### 2. 安装依赖
 
 ```bash
-uv sync
+pip install -r requirements.txt        # 在根目录 .venv 中执行
 ```
 
 ---
@@ -31,8 +31,48 @@ uv sync
 ## 运行
 
 ```bash
-uv run python test2/agent_character.py
+python test2/agent_character.py
 ```
+
+---
+
+## 运行流程图
+
+```
+                  启动 agent_character.py
+                          │
+                          ▼
+   ┌──────────────────────────────────────────┐
+   │ ① 加载 .env → LoggedLLM                  │
+   │ ② 创建 IntermediateTool（保存中间结论）   │
+   │ ③ 创建 Agent                             │
+   │    role  = 资深技术评审专家               │
+   │    tools = [IntermediateTool]            │
+   │    llm   = LoggedLLM（打印请求/响应日志） │
+   └──────────────────┬───────────────────────┘
+                      ▼
+   ┌──────────────────────────────────────────┐
+   │ ④ 构造 messages                          │
+   │   （待评审的「用户积分系统」技术方案）     │
+   └──────────────────┬───────────────────────┘
+                      ▼
+   ┌──────────────────────────────────────────┐
+   │ ⑤ tech_reviewer.kickoff(messages)        │
+   │        ── Agent ReAct 推理循环 ──        │
+   ├──────────────────────────────────────────┤
+   │   评审 架构 ──┐                          │
+   │   评审 安全 ──┤  每完成一个维度，         │
+   │   评审 性能 ──┼─▶ 调用 IntermediateTool   │
+   │   评审 可维护 ┘  保存该维度的中间结论      │
+   │                  │                       │
+   │                  ▼                       │
+   │   汇总所有中间结论 → 输出最终评审报告      │
+   └──────────────────┬───────────────────────┘
+                      ▼
+                  print(result)
+```
+
+> 关键点：`IntermediateTool` 在多步推理中充当「备忘录」，避免长文本推理时遗忘中间结论。
 
 ---
 

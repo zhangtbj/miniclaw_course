@@ -7,10 +7,12 @@
 - 每个技能是一个独立的小 Crew
 """
 
-import json
 from crewai.tools import BaseTool
 from crewai import Agent, Task, Crew
 from pydantic import PrivateAttr
+
+# 注：标准 skill 的输出格式写在 SKILL.md 正文里，不再有 output_schema，
+# 因此 expected_output 改为引用技能描述。
 
 
 class SkillLoaderTool(BaseTool):
@@ -55,9 +57,17 @@ class SkillLoaderTool(BaseTool):
             llm=self._llm,  # 使用主 Agent 的 LLM
         )
 
+        # SKILL.md 的正文（instructions）作为操作指引注入子 Agent；
+        # 没有 instructions 的旧配置仍能正常工作（向后兼容）。
+        instructions = skill_def.get("instructions")
+        task_desc = ""
+        if instructions:
+            task_desc += f"请按以下操作指引执行：\n{instructions}\n\n"
+        task_desc += f"任务输入：\n{skill_input}"
+
         skill_task = Task(
-            description=f"根据以下输入完成任务：\n{skill_input}",
-            expected_output=json.dumps(skill_def['output_schema'], ensure_ascii=False, indent=2),
+            description=task_desc,
+            expected_output=f"按操作指引完成任务：{skill_def['description']}",
             agent=skill_agent,
         )
 

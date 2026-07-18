@@ -24,7 +24,7 @@ OPENAI_API_BASE=http://xiaoluban.rnd.huawei.com:80/y/llm/v1
 ### 2. 安装依赖
 
 ```bash
-uv sync
+pip install -r requirements.txt        # 在根目录 .venv 中执行
 ```
 
 ---
@@ -32,8 +32,51 @@ uv sync
 ## 运行
 
 ```bash
-uv run python test1/basic_agent.py
+python test1/basic_agent.py
 ```
+
+---
+
+## 运行流程图
+
+```
+                  启动 basic_agent.py
+                          │
+                          ▼
+        ┌─────────────────────────────────┐
+        │ ① 加载 .env                     │
+        │   OPENAI_MODEL / API_KEY        │
+        │   / API_BASE                    │
+        └────────────────┬────────────────┘
+                         ▼
+        ┌─────────────────────────────────┐
+        │ ② 创建 LLM 实例                 │
+        │   LLM(model, api_key, base_url) │
+        └────────────────┬────────────────┘
+                         │
+            ┌────────────┴────────────┐
+            ▼                         ▼
+     ┌───────────────┐        ┌────────────────────────┐
+     │ 示例①          │        │ 示例②                  │
+     │ LLM 直接调用   │        │ Agent + Task           │
+     ├───────────────┤        ├────────────────────────┤
+     │ 构造 prompt   │        │ Agent(role/goal/       │
+     │      │        │        │   backstory, llm)      │
+     │      ▼        │        │ Task(agent=agent)      │
+     │ llm.call()    │        │      │                 │
+     │      │        │        │      ▼                 │
+     │      ▼        │        │ Agent 推理循环          │
+     │  OpenAI API   │        │ (Thought→Action→       │
+     │      │        │        │  Observation)          │
+     │      ▼        │        │      │                 │
+     │   print()     │        │      ▼                 │
+     │               │        │ execute_task → result  │
+     │               │        │      │                 │
+     │               │        │      ▼ print()         │
+     └───────────────┘        └────────────────────────┘
+```
+
+> 两条路径共享同一个 `llm` 实例：左边单次请求直接拿结果，右边交给 Agent 做多步推理。
 
 ---
 

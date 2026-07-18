@@ -23,7 +23,7 @@ OPENAI_API_BASE=http://xiaoluban.rnd.huawei.com:80/y/llm/v1
 ### 2. 安装依赖
 
 ```bash
-uv sync
+pip install -r requirements.txt        # 在根目录 .venv 中执行
 ```
 
 ---
@@ -31,8 +31,63 @@ uv sync
 ## 运行
 
 ```bash
-uv run python test3/agent_task.py
+python test3/agent_task.py
 ```
+
+---
+
+## 运行流程图
+
+```
+                   启动 agent_task.py
+                          │
+                          ▼
+   ┌─────────────────────────────────────────┐
+   │ ① 定义 Pydantic 输出模型                │
+   │   BugReport / RootCauseReport /         │
+   │   FixSuggestionReport                   │
+   └──────────────────┬──────────────────────┘
+                      ▼
+   ┌─────────────────────────────────────────┐
+   │ ② 创建 Agent                            │
+   │   qa_expert（资深测试工程师）            │
+   │   tech_lead（技术负责人）                │
+   └──────────────────┬──────────────────────┘
+                      ▼
+   ┌─────────────────────────────────────────┐
+   │ ③ 创建 3 个 Task（用 context 建立依赖）  │
+   └──────────────────┬──────────────────────┘
+                      ▼
+   ┌─────────────────────────────────────────┐
+   │ ④ Crew(process=sequential)              │
+   │   crew.kickoff(inputs={"bug_description"│
+   │                        : bug_input})    │
+   └──────────────────┬──────────────────────┘
+                      ▼
+   ┌──────────────────────────────────────────────────┐
+   │         顺序执行（上游输出 → 下游 context）        │
+   │                                                  │
+   │  Task1  bug_report_task                          │
+   │   qa_expert ──▶ BugReport                        │
+   │                    │                             │
+   │                    ▼ context                     │
+   │  Task2  root_cause_task                          │
+   │   tech_lead ──▶ RootCauseReport                  │
+   │                    │                             │
+   │                    ▼ context（Task1 + Task2）    │
+   │  Task3  fix_suggestion_task                      │
+   │   tech_lead ──▶ FixSuggestionReport              │
+   └────────────────────┬─────────────────────────────┘
+                        ▼
+   ┌─────────────────────────────────────────┐
+   │ ⑤ 输出结果                              │
+   │   result.raw          最终 Task 原始文本 │
+   │   result.pydantic     最终结构化对象     │
+   │   result.tasks_output 每个 Task 的输出   │
+   └─────────────────────────────────────────┘
+```
+
+> 三个 Task 按声明顺序串行；每个 Task 用 `output_pydantic` 强制结构化输出，下游通过 `context` 自动接收上游结果。
 
 ---
 

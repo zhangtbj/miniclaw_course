@@ -1,9 +1,10 @@
-# MiniClaw 依赖（与 pyproject.toml 保持同步）
+# MiniClaw 依赖清单（pip）
 # 安装：pip install -r requirements.txt
-# 更新：修改版本约束后重新执行上面的命令
+# 更新：修改版本约束后重新执行上面的命令（可加 --upgrade）
 
 crewai
 crewai-tools>=1.15.1
 pydantic
 requests
 python-dotenv
+pyyaml

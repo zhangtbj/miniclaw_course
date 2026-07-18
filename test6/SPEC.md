@@ -68,9 +68,8 @@ tracker.mark_replied()  ──▶  持久化到 replied_msgs.json
 4. 配置        _env_int() / Config / config
 5. 消息模型    InboundMessage
 6. 工具        AddImageTool
-7. 技能配置    SKILLS
-8. 技能加载器  SkillLoaderTool
-9. Agent       create_main_agent()
+7. 技能加载    load_skills() / SKILLS_DIR / SKILLS（SkillLoaderTool 复用根目录 tools/skill_loader_tool.py）
+8. Agent       create_main_agent()
 10. WeLink CLI run_welink_command / get_recent_messages / download_image / REPLY_PREFIX / send_to_group
 11. 已回复追踪 RepliedTracker
 12. 消息处理    handle_message / build_prompt
@@ -210,38 +209,23 @@ class AddImageTool(BaseTool):
 - 读取文件 → base64 编码 → 返回 `f"data:image/{ext};base64,{data}"`，`ext` 取 `path.suffix[1:]`，缺省为 `"png"`。
 - 记录日志：图片名与大小（KB）。
 
-### 5.5 技能配置 `SKILLS`
+### 5.5 技能加载 `load_skills()` 与 `SKILLS`
 
-一个模块级 list，每项结构固定：
+技能不写死在代码里，而是从 `skills/` 目录按文件加载（与 test5 同一约定）：
 
-```python
-{
-    "name": str,                 # 技能唯一标识，供 SkillLoaderTool 查找
-    "type": "task",              # 固定
-    "description": str,          # 技能用途
-    "input_schema":  {字段名: 说明},
-    "output_schema": {字段名: 说明},
-}
-```
+- 目录约定：`skills/<skill_name>/SKILL.md`。
+- `SKILL.md` 格式：YAML frontmatter 只声明 `name` / `description`，正文写操作指引（处理步骤 + 输出要求）。
+- `load_skills(skills_dir)`：遍历 `skills_dir.glob("*/SKILL.md")`，拆分 frontmatter 与正文，返回 `[{"name", "description", "instructions"}]`；缺少 frontmatter 时抛 `ValueError`。
+- 模块级定义 `SKILLS_DIR = Path(__file__).parent / "skills"`、`SKILLS = load_skills(SKILLS_DIR)`。
 
-必须包含两项：`meeting_summary`（整理会议纪要）和 `image_analyzer`（分析图片内容）。具体字段见现有实现。
+必须包含两项：`meeting_summary`（整理会议纪要）和 `image_analyzer`（分析图片内容）。新增技能只需添加一个 `skills/<name>/SKILL.md`。
 
-### 5.6 技能加载器 `SkillLoaderTool`（`BaseTool`）
+### 5.6 技能加载器 `SkillLoaderTool`
 
-```python
-class SkillLoaderTool(BaseTool):
-    name: str = "skill_loader"
-    description: str = "加载并执行预定义技能..."
-    skills: list[dict[str, Any]]   # pydantic 字段
-    llm: Any                        # pydantic 字段（类型用 Any，避免 crewai LLM 包装校验失败）
+复用根目录共享实现 `tools/skill_loader_tool.py`（`from tools.skill_loader_tool import SkillLoaderTool`），不再在本文件内联定义：
 
-    def _run(self, skill_name: str, **kwargs: Any) -> str
-    def _find_skill(self, skill_name: str) -> dict[str, Any] | None
-    def _execute_skill(self, skill: dict, inputs: dict) -> str
-```
-行为：
-- `_run`：找不到技能 → 返回错误串（列出可用技能名）。
-- `_execute_skill`：为该技能动态创建一个 **Sub-Crew**（一个 `Agent` + 一个 `Task` + 一个 `Crew`），把 `input_schema`/`output_schema` 序列化进 Task 描述与期望输出，`crew.kickoff()` 后返回 `str(result)`。
+- 构造：`SkillLoaderTool(skills=SKILLS, llm=llm)`，`skills` / `llm` 为私有属性，工具描述中自动列出可用技能。
+- `_run(skill_name, skill_input)`：找不到技能 → 返回错误串；找到则把 SKILL.md 正文（`instructions`）作为操作指引注入一次性 **Sub-Crew**（一个 `Agent` + 一个 `Task` + 一个 `Crew`），`crew.kickoff()` 后返回 `str(result)`。
 
 ### 5.7 Agent `create_main_agent(llm) -> Agent`
 
@@ -399,7 +383,7 @@ test6/workspace/{group_id}/
 
 ## 10. 扩展指南
 
-**新增技能**：往 `SKILLS` 追加一项（含 name/description/input_schema/output_schema），Sub-Crew 自动可用。
+**新增技能**：在 `skills/` 下新建 `<skill_name>/SKILL.md`（frontmatter 声明 name/description，正文写操作指引），Sub-Crew 自动可用。
 
 **新增工具**：继承 `BaseTool`，实现 `_run`，加入 `create_main_agent` 的 `tools` 列表。
 

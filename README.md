@@ -28,24 +28,19 @@ MiniClaw 是一个**渐进式 AI Agent 开发课程**，通过 6 个递进的实
 git clone <repo-url>
 cd MiniClaw
 
-# 安装依赖（二选一）
-
-# 方式 A：uv（推荐，自动管理虚拟环境）
-uv sync
-
-# 方式 B：pip + venv
+# 安装依赖（pip + venv）
 python3.11 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # 配置环境变量
-cp .env.example .env
+cp env.example .env
 # 编辑 .env 填入你的 API Key
 ```
 
 ### 2. 配置 LLM 与 WeLink
 
-编辑 `.env` 文件（参考 `.env.example`）：
+编辑 `.env` 文件（参考 `env.example`）：
 
 ```env
 # LLM 配置（默认使用内部小鲁班网关，支持任何 OpenAI 兼容接口）
@@ -72,13 +67,13 @@ RECENT_MINUTES=10
 
 ```bash
 # test1: LLM 直接调用
-uv run python test1/basic_agent.py
+python test1/basic_agent.py
 
 # test2: Agent 人设工程
-uv run python test2/agent_character.py
+python test2/agent_character.py
 
 # test3: 多任务链式工作流
-uv run python test3/agent_task.py
+python test3/agent_task.py
 ```
 
 ---
@@ -117,7 +112,7 @@ test6  项目实战         → WeLink AI 助理 + 开发 Skill
 
 **运行**：
 ```bash
-uv run python test1/basic_agent.py
+python test1/basic_agent.py
 ```
 
 **核心代码**：
@@ -150,7 +145,7 @@ response = llm.call([{"role": "user", "content": "你好"}])
 
 **运行**：
 ```bash
-uv run python test2/agent_character.py
+python test2/agent_character.py
 ```
 
 **核心代码**：
@@ -188,7 +183,7 @@ result = agent.kickoff(messages)
 
 **运行**：
 ```bash
-uv run python test3/agent_task.py
+python test3/agent_task.py
 ```
 
 **核心代码**：
@@ -233,7 +228,7 @@ result = crew.kickoff()
 
 **运行**：
 ```bash
-uv run python test4/agent_tools.py
+python test4/agent_tools.py
 ```
 
 **核心代码**：
@@ -267,20 +262,14 @@ crew.kickoff(inputs={"user_input": "我记了哪些？"})
 
 **运行**：
 ```bash
-uv run python test5/agent_skills.py
+python test5/agent_skills.py
 ```
 
 **核心代码**：
 ```python
-# 定义技能
-SKILLS = [
-    {
-        "name": "meeting_summary",
-        "description": "整理会议纪要",
-        "input_schema": {"raw_notes": "原始记录"},
-        "output_schema": {"attendees": "...", "action_items": "..."}
-    }
-]
+# 技能不写死在数组里，而是从 skills/<name>/SKILL.md 文件加载
+SKILLS = load_skills(Path(__file__).parent / "skills")
+# 每个 SKILL.md：frontmatter 声明 name/description，正文写操作指引
 
 # Agent 只配备技能加载器
 agent = Agent(
@@ -288,8 +277,8 @@ agent = Agent(
     ...
 )
 
-# Agent 根据需求自动选择技能
-crew.kickoff(inputs={"user_input": "帮我整理会议记录"})
+# Agent 根据需求自动选择技能，动态创建 Sub-Crew 执行
+crew.kickoff(inputs={"notes": "帮我整理会议记录..."})
 ```
 
 📖 **详细文档**：[test5/README.md](test5/README.md)
@@ -298,26 +287,25 @@ crew.kickoff(inputs={"user_input": "帮我整理会议记录"})
 
 #### Test6 — 项目实战：WeLink AI 助理
 
-**学习目标**：完整项目开发 + 使用业界开发 Skill
+**学习目标**：用 AI 编码助手（OpenCode）从规格到交付完整项目
 
 | 内容 | 文件 | 说明 |
 |------|------|------|
-| CrewAI Agent 版（主） | `welinkcli_agent.py` | 单文件，集成轮询/Agent/工具/技能 |
+| CrewAI Agent 版（主） | `welinkcli_agent.py` | **学员作业**：按 SPEC.md 自行生成，仓库不直接提供 |
+| 技术规范 | `SPEC.md` | 实现契约：接口、模块布局、关键规则、验收标准 |
 | 直接 LLM 调用版 | `welinkcli_llm.py` | 对比参考，无 Agent 框架 |
-| 技术规范 | `SPEC.md` | 项目架构与模块定义 |
-| 开发指南 | `test6/README.md` | OpenSpec / SuperPowers / Code Review 工作流 |
+| 开发指南 | `test6/README.md` | OpenCode 工作流：OpenSpec+Superpowers（方案 A）/ 直接用 SPEC.md 生成（方案 B） |
+| 助教参考答案 | `homework.zip` | 加密压缩包，密码由助教提供 |
 
-**运行**：
+**作业方式**（二选一，详见 [test6/README.md](test6/README.md)）：
+- 方案 A：`cd test6 && opencode`，用 `/opsx-propose` → `/opsx-apply` → `/opsx-archive` 走完整规格流水线
+- 方案 B：`cd test6 && opencode`，直接让 OpenCode 阅读 `SPEC.md` 生成 `welinkcli_agent.py`
+
+**运行**（完成作业后）：
 ```bash
 # 需先配置 WELINK_GROUP_ID 并确保 welink-cli 可用
-uv run python test6/welinkcli_agent.py
+python test6/welinkcli_agent.py
 ```
-
-**学习重点**：
-- 阅读 SPEC.md 理解单文件完整架构
-- 使用 OpenSpec 生成需求规格
-- 使用 SuperPowers 进行 brainstorming 和实现
-- 使用 Code Review 审查代码
 
 📖 **详细文档**：[test6/README.md](test6/README.md) | [SPEC.md](test6/SPEC.md)
 
@@ -328,10 +316,9 @@ uv run python test6/welinkcli_agent.py
 ```
 MiniClaw/
 ├── README.md              # 本文件（用户手册）
-├── pyproject.toml         # 依赖管理（uv）
+├── AGENTS.md              # AI 编码助手（OpenCode 等）项目约定
 ├── requirements.txt       # 依赖清单（pip）
-├── uv.lock                # 依赖锁定（uv）
-├── .env.example           # 环境变量模板
+├── env.example            # 环境变量模板
 ├── .env                   # 环境变量（需创建，已 gitignore）
 │
 ├── llm/                   # 自定义 LLM
@@ -364,10 +351,12 @@ MiniClaw/
 │   └── agent_skills.py
 │
 └── test6/                 # 项目实战：WeLink AI 助理
-    ├── README.md              # 开发指南（开发 Skill 工作流）
-    ├── SPEC.md                # 技术规范
-    ├── welinkcli_agent.py    # CrewAI Agent 版（单文件，主版本）
-    └── welinkcli_llm.py       # 直接 LLM 调用版（对比参考）
+    ├── README.md              # 开发指南（OpenCode 工作流：方案 A/B）
+    ├── SPEC.md                # 技术规范（实现契约）
+    ├── welinkcli_agent.py    # 【学员作业】按 SPEC.md 自行生成，仓库不直接提供
+    ├── homework.zip          # 助教参考答案（加密，密码由助教提供）
+    ├── welinkcli_llm.py       # 直接 LLM 调用版（对比参考）
+    └── .opencode/             # OpenCode 命令与技能（OpenSpec/Superpowers/Code Review）
 ```
 
 ---
@@ -445,19 +434,9 @@ agent = Agent(
 
 ## 常见问题
 
-### Q: 需要安装 uv 吗？
+### Q: 如何安装和更新依赖？
 
-推荐安装。uv 是快速的 Python 包管理器，比 pip 快 10-100 倍。
-
-```bash
-# macOS / Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-如果不想用 uv，也可以用 pip（项目已提供 `requirements.txt`）：
+项目只使用 pip（不提供 uv 方式）：
 
 ```bash
 python3.11 -m venv .venv
@@ -465,8 +444,6 @@ source .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements.txt      # 安装
 pip install --upgrade -r requirements.txt  # 更新依赖
 ```
-
-> uv 用 `uv sync` 安装/更新；pip 用 `pip install -r requirements.txt`，更新时重新执行同一命令（可加 `--upgrade`）。
 
 ---
 
@@ -484,28 +461,27 @@ pip install --upgrade -r requirements.txt  # 更新依赖
 
 ```bash
 # 按顺序运行
-uv run python test1/basic_agent.py
-uv run python test2/agent_character.py
-uv run python test3/agent_task.py
-uv run python test4/agent_tools.py
-uv run python test5/agent_skills.py
+python test1/basic_agent.py
+python test2/agent_character.py
+python test3/agent_task.py
+python test4/agent_tools.py
+python test5/agent_skills.py
 ```
 
 ---
 
 ### Q: test6 的代码在哪里？
 
-test6 是项目实战模块，已提供完整可运行的代码：
+test6 是项目实战模块，`welinkcli_agent.py` 是**学员作业**，仓库中不直接提供：
 
-- `welinkcli_agent.py` — CrewAI Agent 版（单文件，主版本），集成消息轮询、Agent 推理、工具调用、技能加载
-- `welinkcli_llm.py` — 直接 LLM 调用版（对比参考，无 Agent 框架）
+- 按 [test6/SPEC.md](test6/SPEC.md) 的实现契约，用 OpenCode 自行生成（流程见 [test6/README.md](test6/README.md)，方案 A/B 均可）
+- `welinkcli_llm.py` — 直接 LLM 调用版（对比参考，无 Agent 框架），可直接阅读
+- `homework.zip` — 助教参考答案（加密），完成作业后向助教索取密码对照
 
 ```bash
-# 运行前需配置 WELINK_GROUP_ID，并确保 welink-cli 已安装登录
-uv run python test6/welinkcli_agent.py
+# 完成作业后运行，需配置 WELINK_GROUP_ID，并确保 welink-cli 已安装登录
+python test6/welinkcli_agent.py
 ```
-
-阅读 [test6/SPEC.md](test6/SPEC.md) 理解架构，参考 [test6/README.md](test6/README.md) 体验用 OpenSpec / SuperPowers / Code Review 的开发流程。
 
 ---
 
@@ -551,18 +527,25 @@ class MyTool(BaseTool):
 
 ### 2. 自定义技能
 
-在 `SKILLS` 列表中添加配置：
+新增一个 `skills/<skill_name>/SKILL.md` 文件即可，无需改代码：
 
-```python
-SKILLS = [
-    {
-        "name": "my_skill",
-        "description": "技能描述",
-        "input_schema": {...},
-        "output_schema": {...}
-    }
-]
+```markdown
+---
+name: my_skill
+description: 技能描述（Agent 据此选择何时使用）
+---
+
+# 技能标题
+
+## 处理步骤
+1. …
+
+## 输出要求
+- `field_a`：…
+- `field_b`：…
 ```
+
+`load_skills()` 会自动解析 frontmatter（name/description）和正文（操作指引）。
 
 ---
 
@@ -579,7 +562,7 @@ class AddImageTool(BaseTool):
     ...
 ```
 
-📖 **源码**：[test6/welinkcli_agent.py](test6/welinkcli_agent.py) 中的 `AddImageTool`
+📖 **契约**：[test6/SPEC.md](test6/SPEC.md) 5.4 节的 `AddImageTool` 定义（实现见 test6 作业）
 
 ---
 
@@ -609,7 +592,7 @@ class AddImageTool(BaseTool):
 1. **先跑通**：按顺序运行 test1-5，观察输出
 2. **再读码**：阅读每个 test 的 README.md，理解核心概念
 3. **后修改**：尝试修改 backstory、Task description，观察效果
-4. **终实战**：阅读 [test6/SPEC.md](test6/SPEC.md)，运行并修改 WeLink AI 助理
+4. **终实战**：阅读 [test6/SPEC.md](test6/SPEC.md)，用 OpenCode 按规格生成并运行自己的 WeLink AI 助理
 
 ### 关键概念速查
 
