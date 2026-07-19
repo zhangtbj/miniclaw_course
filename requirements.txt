@@ -1,10 +1,10 @@
-# MiniClaw 课程项目依赖
-# 只列直接依赖，传递依赖由 pip 按平台自动解析（Windows / macOS / Linux 通用）
-# 运行环境：Python 3.11（见 README.md / AGENTS.md）
+# MiniClaw course project dependencies
+# Direct dependencies only; transitive deps are resolved by pip per platform
+# (Windows / macOS / Linux). Python 3.11, see README.md / AGENTS.md.
 
-crewai>=1.15.1          # Agent 框架（test1–test5，llm/llm.py，tools/）
-crewai-tools>=1.15.1    # FileWriterTool / FileReadTool（test4）
-python-dotenv>=1.2.2    # 读取根目录 .env 配置
-requests>=2.34.2        # llm/llm.py、test6 的 HTTP 请求
-PyYAML>=6.0.3           # test5 解析 SKILL.md frontmatter
-pydantic>=2.12.5        # tools/ 自定义工具与 test3 的结构化输出
+crewai>=1.15.1          # Agent framework (test1-test5, llm/llm.py, tools/)
+crewai-tools>=1.15.1    # FileWriterTool / FileReadTool (test4)
+python-dotenv>=1.2.2    # loads root .env config
+requests>=2.34.2        # HTTP calls in llm/llm.py and test6
+PyYAML>=6.0.3           # SKILL.md frontmatter parsing (test5)
+pydantic>=2.12.5        # custom tools (tools/) and structured output (test3)
