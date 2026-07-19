@@ -1,52 +1,10 @@
-altgraph @ file:///AppleInternal/Library/BuildRoots/39d9dc1a-2111-11f0-be06-226177e5bb69/Library/Caches/com.apple.xbs/Sources/python3/altgraph-0.17.2-py2.py3-none-any.whl
-attrs==26.1.0
-beautifulsoup4==4.14.3
-blinker==1.9.0
-brotli==1.2.0
-certifi==2026.2.25
-cffi==2.0.0
-charset-normalizer==3.4.7
-cryptography==46.0.7
-et_xmlfile==2.0.0
-exceptiongroup==1.3.1
-future @ file:///AppleInternal/Library/BuildRoots/39d9dc1a-2111-11f0-be06-226177e5bb69/Library/Caches/com.apple.xbs/Sources/python3/future-0.18.2-py3-none-any.whl
-h11==0.16.0
-h2==4.3.0
-hpack==4.1.0
-hyperframe==6.1.0
-idna==3.11
-kaitaistruct==0.11
-lxml==6.1.0
-macholib @ file:///AppleInternal/Library/BuildRoots/39d9dc1a-2111-11f0-be06-226177e5bb69/Library/Caches/com.apple.xbs/Sources/python3/macholib-1.15.2-py2.py3-none-any.whl
-markitdown==0.0.1a1
-openpyxl==3.1.5
-outcome==1.3.0.post0
-packaging==26.1
-pillow==11.3.0
-powerline-status==2.7
-progressbar2==4.5.0
-pyasn1==0.6.3
-pycparser==2.23
-pyOpenSSL==26.0.0
-pyparsing==3.3.2
-PyPDF2==3.0.1
-PySocks==1.7.1
-python-pptx==1.0.2
-python-utils==3.9.1
-PyYAML==6.0.3
-regex==2026.1.15
-requests==2.32.5
-selenium==4.0.0
-selenium-wire==5.1.0
-six @ file:///AppleInternal/Library/BuildRoots/39d9dc1a-2111-11f0-be06-226177e5bb69/Library/Caches/com.apple.xbs/Sources/python3/six-1.15.0-py2.py3-none-any.whl
-sniffio==1.3.1
-sortedcontainers==2.4.0
-soupsieve==2.8.4
-trio==0.31.0
-trio-websocket==0.12.2
-typing_extensions==4.15.0
-urllib3==1.26.20
-urllib3-secure-extra==0.1.0
-wsproto==1.2.0
-xlsxwriter==3.2.9
-zstandard==0.25.0
+# MiniClaw 课程项目依赖
+# 只列直接依赖，传递依赖由 pip 按平台自动解析（Windows / macOS / Linux 通用）
+# 运行环境：Python 3.11（见 README.md / AGENTS.md）
+
+crewai>=1.15.1          # Agent 框架（test1–test5，llm/llm.py，tools/）
+crewai-tools>=1.15.1    # FileWriterTool / FileReadTool（test4）
+python-dotenv>=1.2.2    # 读取根目录 .env 配置
+requests>=2.34.2        # llm/llm.py、test6 的 HTTP 请求
+PyYAML>=6.0.3           # test5 解析 SKILL.md frontmatter
+pydantic>=2.12.5        # tools/ 自定义工具与 test3 的结构化输出
